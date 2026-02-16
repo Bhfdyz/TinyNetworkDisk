@@ -30,5 +30,7 @@ private:
 public slots:
     void showConnect();
 
+private slots:
+    void on_send_btn_clicked();
 };
 #endif // TCPCLIENT_H

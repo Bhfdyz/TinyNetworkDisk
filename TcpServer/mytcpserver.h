@@ -1,7 +1,10 @@
 #ifndef MYTCPSERVER_H
 #define MYTCPSERVER_H
 
+#include "mytcpsocket.h"
+
 #include <QTcpServer>
+#include <QList>
 
 class MyTcpServer : public QTcpServer
 {
@@ -15,6 +18,8 @@ public:
 
 private:
     MyTcpServer();
+
+    QList<MyTcpSocket*> m_tcpSocketList;
 
 };
 
