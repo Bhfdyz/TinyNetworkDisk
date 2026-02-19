@@ -21,6 +21,9 @@ private:
 
     QList<MyTcpSocket*> m_tcpSocketList;
 
+public slots:
+    void deleteSocket(MyTcpSocket *mysocket);
+
 };
 
 #endif // MYTCPSERVER_H

@@ -29,8 +29,11 @@ private:
 
 public slots:
     void showConnect();
+    void recvMsg();
 
 private slots:
-    void on_send_btn_clicked();
+    void on_login_btn_clicked();
+    void on_register_btn_clicked();
+    void on_cancel_btn_clicked();
 };
 #endif // TCPCLIENT_H
