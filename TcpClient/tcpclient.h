@@ -1,6 +1,8 @@
 #ifndef TCPCLIENT_H
 #define TCPCLIENT_H
 
+#include "opewidget.h"
+
 #include <QWidget>
 #include <QFile>
 #include <QTcpSocket>
@@ -16,16 +18,21 @@ class TcpClient : public QWidget
     Q_OBJECT
 
 public:
-    TcpClient(QWidget *parent = nullptr);
     ~TcpClient();
     void loadConfig();
 
+    static TcpClient &getInstance();
+    QTcpSocket &getTcpSocket();
+    QString loginName();
+
 private:
+    TcpClient(QWidget *parent = nullptr);
     Ui::TcpClient *ui;
     QString m_strIP;
     quint16 m_usPort;
 
     QTcpSocket m_tcpSocket;
+    QString m_strLoginName;
 
 public slots:
     void showConnect();

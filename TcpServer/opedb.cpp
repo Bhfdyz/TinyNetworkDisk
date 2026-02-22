@@ -54,6 +54,133 @@ void OpeDB::handleOffline(const char *name)
     query.exec(data);
 }
 
+QStringList OpeDB::handleAllOnline()
+{
+    QString data = QString("select name from usrInfo where online=1");
+    QSqlQuery query;
+    query.exec(data);
+    QStringList result;
+    result.clear();
+
+    while (query.next()) {
+        result.append(query.value(0).toString());
+    }
+    return result;
+}
+
+int OpeDB::handleSearchUsr(const char *name)
+{
+    if (name == NULL) {
+        return -1;
+    }
+    QString data = QString("select online from usrInfo where name=\'%1\'").arg(name);
+    QSqlQuery query;
+    query.exec(data);
+    if (query.next()) {
+        int ret = query.value(0).toInt();
+        if (ret == 1) {
+            return 1;
+        } else if (ret == 0) {
+            return 0;
+        }
+    } else {
+        return -1;
+    }
+}
+
+int OpeDB::handleAddFriend(const char *pername, const char *name)
+{
+    if (pername == NULL || name == NULL) {
+        return -1;
+    }
+    QString data = QString("select * from friend where (id=(select id from usrInfo where name=\'%1\') "
+                           "and friendid=(select id from usrInfo where name=\'%2\')) or (id=(select id from usrInfo where name=\'%3\') "
+                           "and friendid=(select id from usrInfo where name=\'%4\')) ").arg(pername).arg(name).arg(name).arg(pername);
+    qDebug() << data;
+    QSqlQuery query;
+    query.exec(data);
+    if (query.next()) {
+        return 0; // 双方是好友
+    } else {
+        QString data = QString("select online from usrInfo where name=\'%1\'").arg(pername);
+        QSqlQuery query;
+        query.exec(data);
+        if (query.next()) {
+            int ret = query.value(0).toInt();
+            if (ret == 1) {
+                return 1;
+            } else if (ret == 0) {
+                return 2;
+            }
+        } else {
+            return 3;
+        }
+    }
+
+}
+
+void OpeDB::handleAddFriendFin(const char *pername, const char *name)
+{
+    QString findperName = QString("select id from usrInfo where name=\'%1\'").arg(pername);
+    int perName = 0;
+    QSqlQuery query;
+    query.exec(findperName);
+    if (query.next()) {
+        perName = query.value(0).toInt();
+    }
+    QString findName = QString("select id from usrInfo where name=\'%1\'").arg(name);
+    int Name = 0;
+    query.exec(findName);
+    if (query.next()) {
+        Name = query.value(0).toInt();
+    }
+
+    QString data = QString("insert into friend(id, friendid) values(%1, %2)").arg(Name).arg(perName);
+    query.exec(data);
+}
+
+QStringList OpeDB::handleFlushFriend(const char *name)
+{
+    QStringList strFriendList;
+    strFriendList.clear();
+    if (name == NULL) {
+        return strFriendList;
+    }
+    QString data = QString("select name from usrInfo where online=1 and id in "
+                           "(select id from friend where friendid=(select id "
+                           "from usrInfo where name=\'%1\'))").arg(name);
+    QSqlQuery query;
+    query.exec(data);
+    while (query.next()) {
+        strFriendList.append(query.value(0).toString());
+    }
+    data = QString("select name from usrInfo where online=1 and id in "
+                           "(select friendid from friend where id=(select id "
+                           "from usrInfo where name=\'%1\'))").arg(name);
+    query.exec(data);
+    while (query.next()) {
+        strFriendList.append(query.value(0).toString());
+    }
+    return strFriendList;
+}
+
+void OpeDB::handleDelFriend(const char *name, const char *friendname)
+{
+    if (name == NULL || friendname == NULL) {
+        return;
+    }
+    QString data = QString("delete from friend where id =(select id "
+                            "from usrInfo where name = \'%1\') and friendid = "
+                           "(select id from usrInfo where name = \'%2\')").arg(name).arg(friendname);
+    QSqlQuery query;
+    query.exec(data);
+    data = QString("delete from friend where id =(select id "
+                   "from usrInfo where name = \'%1\') and friendid = "
+                   "(select id from usrInfo where name = \'%2\')").arg(friendname).arg(name);
+    query.exec(data);
+
+}
+
 OpeDB::OpeDB(QObject *parent)
     : QObject{parent}
 {

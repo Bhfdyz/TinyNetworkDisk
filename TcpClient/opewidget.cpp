@@ -23,3 +23,15 @@ OpeWidget::OpeWidget(QWidget *parent)
     connect(m_pListW, &QListWidget::currentRowChanged, m_pSW, &QStackedWidget::setCurrentIndex);
 
 }
+
+OpeWidget &OpeWidget::getInstance()
+{
+    static OpeWidget instance;
+
+    return instance;
+}
+
+Friend *OpeWidget::getFriend()
+{
+    return m_pFriend;
+}

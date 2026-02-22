@@ -1,5 +1,6 @@
 #include "mytcpsocket.h"
 #include "protocol.h"
+#include "mytcpserver.h"
 
 #include <QDebug>
 
@@ -62,6 +63,116 @@ void MyTcpSocket::recvMsg()
             write((char*)respdu, respdu->uiPDULen);
             free(respdu);
             respdu = NULL;
+            break;
+        }
+        case ENUM_MSG_TYPE_ALL_ONLINE_REQUEST:{
+            QStringList ret = OpeDB::getInstance().handleAllOnline();
+            uint uiMsgLen = ret.size() * 32;
+            PDU *respdu = mkPDU(uiMsgLen);
+            respdu->uiMsgType = ENUM_MSG_TYPE_ALL_ONLINE_RESPOND;
+            for (int i = 0; i < ret.size(); ++i) {
+                memcpy((char*)(respdu->caMsg) + i * 32, ret.at(i).toStdString().c_str(), ret.at(i).size());
+            }
+            write((char*)respdu, respdu->uiPDULen);
+            free(respdu);
+            respdu = NULL;
+            break;
+        }
+        case ENUM_MSG_TYPE_SEARCH_USR_REQUEST:{
+            int ret = OpeDB::getInstance().handleSearchUsr(pdu->caData);
+            PDU *respdu = mkPDU(0);
+            respdu->uiMsgType = ENUM_MSG_TYPE_SEARCH_USR_RESPOND;
+            if (ret == -1) {
+                strcpy(respdu->caData, SEARCH_USR_NO);
+            } else if (ret == 0) {
+                strcpy(respdu->caData, SEARCH_USR_OFFLINE);
+            } else if (ret == 1) {
+                strcpy(respdu->caData, SEARCH_USR_ONLINE);
+            }
+            write((char*)respdu, respdu->uiPDULen);
+            free(respdu);
+            respdu = NULL;
+            break;
+        }
+        case ENUM_MSG_TYPE_ADD_FRIEND_REQUEST:{
+            char caPerName[32] = {'\0'};
+            char caName[32] = {'\0'};
+            strncpy(caPerName, pdu->caData, 32);
+            strncpy(caName, pdu->caData + 32, 32);
+            int ret = OpeDB::getInstance().handleAddFriend(caPerName, caName);
+            PDU *respdu = NULL;
+            if (ret == -1) {
+                respdu = mkPDU(0);
+                respdu->uiMsgType = ENUM_MSG_TYPE_ADD_FRIEND_RESPOND;
+                strcpy(respdu->caData, UNKNOW_ERROR);
+                write((char*)respdu, respdu->uiPDULen);
+                free(respdu);
+                respdu = NULL;
+            } else if (ret == 0) {
+                respdu = mkPDU(0);
+                respdu->uiMsgType = ENUM_MSG_TYPE_ADD_FRIEND_RESPOND;
+                strcpy(respdu->caData, EXISTED_FRIEND);
+                write((char*)respdu, respdu->uiPDULen);
+                free(respdu);
+                respdu = NULL;
+            } else if (ret == 1) {
+                MyTcpServer::getInstance().resend(caPerName, pdu);
+            } else if (ret == 2) {
+                respdu = mkPDU(0);
+                respdu->uiMsgType = ENUM_MSG_TYPE_ADD_FRIEND_RESPOND;
+                strcpy(respdu->caData, ADD_FRIEND_OFFLINE);
+                write((char*)respdu, respdu->uiPDULen);
+                free(respdu);
+                respdu = NULL;
+            } else if (ret == 3) {
+                respdu = mkPDU(0);
+                respdu->uiMsgType = ENUM_MSG_TYPE_ADD_FRIEND_RESPOND;
+                strcpy(respdu->caData, ADD_FRIEND_NOEXIST);
+                write((char*)respdu, respdu->uiPDULen);
+                free(respdu);
+                respdu = NULL;
+            }
+            break;
+        }
+        case ENUM_MSG_TYPE_ADD_FRIEND_AGREE:{
+            char caPerName[32] = {'\0'};
+            char caName[32] = {'\0'};
+            strncpy(caPerName, pdu->caData, 32);
+            strncpy(caName, pdu->caData + 32, 32);
+            OpeDB::getInstance().handleAddFriendFin(caPerName, caName);
+        }
+        case ENUM_MSG_TYPE_ADD_FRIEND_REFUSE:{
+            break;
+        }
+        case ENUM_MSG_TYPE_FLUSH_FRIEND_REQUEST:{
+            char caName[32] = {'\0'};
+            strncpy(caName, pdu->caData, 32);
+            QStringList ret = OpeDB::getInstance().handleFlushFriend(caName);
+            uint uiMsgLen = ret.size() * 32;
+            PDU *respdu = mkPDU(uiMsgLen);
+            respdu->uiMsgType = ENUM_MSG_TYPE_FLUSH_FRIEND_RESPOND;
+            for (int i = 0; i < ret.size(); ++i) {
+                memcpy((char*)(respdu->caMsg) + i * 32,
+                       ret.at(i).toStdString().c_str(), ret.at(i).size());
+            }
+            write((char*)respdu, respdu->uiPDULen);
+            free(respdu);
+            respdu = NULL;
+            break;
+        }
+        case ENUM_MSG_TYPE_DELETE_FRIEND_REQUEST:{
+            char friendName[32] = {'\0'};
+            char Name[32] = {'\0'};
+            strncpy(Name, pdu->caData, 32);
+            strncpy(friendName, pdu->caData + 32, 32);
+            OpeDB::getInstance().handleDelFriend(Name, friendName);
+            PDU *respdu = mkPDU(0);
+            respdu->uiMsgType = ENUM_MSG_TYPE_DELETE_FRIEND_RESPOND;
+            strcpy(respdu->caData, DEL_FRIEND_OK);
+            write((char*)respdu, respdu->uiPDULen);
+            free(respdu);
+            respdu = NULL;
+
             break;
         }
         default:

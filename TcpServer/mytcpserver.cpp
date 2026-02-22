@@ -38,3 +38,18 @@ void MyTcpServer::incomingConnection(qintptr socketDescriptor)
     connect(pTcpSocket, &MyTcpSocket::offline, this, &MyTcpServer::deleteSocket);
 
 }
+
+void MyTcpServer::resend(const char *pername, PDU *pdu)
+{
+    if (pername == NULL || pdu == NULL) {
+        return;
+    }
+    QString name = pername;
+    for (int i = 0; i < m_tcpSocketList.size(); ++i) {
+        if (name == m_tcpSocketList.at(i)->getName()) {
+            m_tcpSocketList.at(i)->write((char*)pdu, pdu->uiPDULen);
+            qDebug() << "resend";
+            break;
+        }
+    }
+}

@@ -2,6 +2,7 @@
 #define MYTCPSERVER_H
 
 #include "mytcpsocket.h"
+#include "protocol.h"
 
 #include <QTcpServer>
 #include <QList>
@@ -14,6 +15,8 @@ public:
     MyTcpServer &operator=(const MyTcpServer&) = delete;
     MyTcpServer(const MyTcpServer&) = delete;
     void incomingConnection(qintptr socketDescriptor);
+
+    void resend(const char *pername, PDU *pdu);
 
 
 private:
