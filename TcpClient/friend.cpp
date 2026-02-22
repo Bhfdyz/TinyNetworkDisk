@@ -1,8 +1,10 @@
 #include "friend.h"
 #include "protocol.h"
 #include "tcpclient.h"
+#include "privatechat.h"
 
 #include <QInputDialog>
+#include <QMessageBox>
 
 Friend::Friend(QWidget *parent)
     : QWidget{parent}
@@ -48,6 +50,8 @@ Friend::Friend(QWidget *parent)
     connect(m_pSearchUsrPB, &QPushButton::clicked, this, &Friend::searchUsr);
     connect(m_pFlushFriendPB, &QPushButton::clicked, this, &Friend::flushFriend);
     connect(m_pDelFriendPB, &QPushButton::clicked, this, &Friend::delFriend);
+    connect(m_pPrivateChatPB, &QPushButton::clicked, this, &Friend::privateChat);
+    connect(m_pMsgSendPB, &QPushButton::clicked, this, &Friend::groupChat);
 
 }
 
@@ -72,6 +76,12 @@ void Friend::updateFriendList(PDU *pdu)
         memcpy(caName, (char*)(pdu->caMsg) + i * 32, 32);
         m_pFriendListWidget->addItem(caName);
     }
+}
+
+void Friend::updateGroupMsg(PDU *pdu)
+{
+    QString strMsg = QString("%1 says: %2").arg(pdu->caData).arg((char*)pdu->caMsg);
+    m_pShowMsgTE->append(strMsg);
 }
 
 void Friend::showOnline()
@@ -131,4 +141,31 @@ void Friend::delFriend()
     free(pdu);
     pdu = NULL;
 
+}
+
+void Friend::privateChat()
+{
+    if (m_pFriendListWidget->currentItem() == NULL) {
+        return;
+    }
+    QString strChatName = m_pFriendListWidget->currentItem()->text();
+    PrivateChat::getInstance().setChatName(strChatName);
+    if (PrivateChat::getInstance().isHidden()) {
+        PrivateChat::getInstance().show();
+    }
+
+
+}
+
+void Friend::groupChat()
+{
+    QString strMsg = m_pInputMsgLE->text();
+    if (!strMsg.isEmpty()) {
+        PDU *pdu = mkPDU(strMsg.size() + 1);
+        pdu->uiMsgType = ENUM_MSG_TYPE_GROUP_CHAT_REQUEST;
+        strncpy(pdu->caData, TcpClient::getInstance().loginName().toStdString().c_str(), TcpClient::getInstance().loginName().size());
+        strncpy((char*)(pdu->caMsg), strMsg.toStdString().c_str(), strMsg.size());
+        TcpClient::getInstance().getTcpSocket().write((char*)pdu, pdu->uiPDULen);
+        m_pInputMsgLE->clear();
+    }
 }

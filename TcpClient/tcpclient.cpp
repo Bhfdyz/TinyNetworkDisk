@@ -1,5 +1,6 @@
 #include "tcpclient.h"
 #include "ui_tcpclient.h"
+#include "privatechat.h"
 
 #include "protocol.h"
 
@@ -146,7 +147,15 @@ void TcpClient::recvMsg()
             QMessageBox::information(this, "删除好友", "删除好友成功");
             break;
         }
+        case ENUM_MSG_TYPE_PRIVATE_CHAT_REQUEST:{
+            PrivateChat::getInstance().updateMsg(pdu);
 
+            break;
+        }
+        case ENUM_MSG_TYPE_GROUP_CHAT_REQUEST:{
+            OpeWidget::getInstance().getFriend()->updateGroupMsg(pdu);
+            break;
+        }
         default:
             break;
     }

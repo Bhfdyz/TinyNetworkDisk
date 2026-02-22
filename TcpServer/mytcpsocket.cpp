@@ -175,6 +175,23 @@ void MyTcpSocket::recvMsg()
 
             break;
         }
+        case ENUM_MSG_TYPE_PRIVATE_CHAT_REQUEST:{
+            char caPerName[32] = {'\0'};
+            memcpy(caPerName, pdu->caData + 32, 32);
+            MyTcpServer::getInstance().resend(caPerName, pdu);
+
+            break;
+        }
+        case ENUM_MSG_TYPE_GROUP_CHAT_REQUEST:{
+            char caName[32] = {'\0'};
+            strncpy(caName, pdu->caData, 32);
+            QStringList onlineFriend = OpeDB::getInstance().handleFlushFriend(caName);
+            for (int i = 0; i < onlineFriend.size(); ++i) {
+                MyTcpServer::getInstance().resend(onlineFriend.at(i).toStdString().c_str(), pdu);
+            }
+
+            break;
+        }
         default:
             break;
     }
